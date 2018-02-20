@@ -74,7 +74,7 @@ function Organelle(startPosition = {x:0, y:0, z:0}, radius = 150, color = 0x35fa
 
   //METHODS
   this.update = function() {
-
+	this.mesh.position.x += .1;
   };
 
   this.init = function() {
