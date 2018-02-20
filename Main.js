@@ -126,6 +126,9 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25)
     if (this.mesh.position.distanceTo(this.target.mesh.position) < 5) {
       this.delete();
     }
+    //Set vesicle to point towards target
+    this.setTarget(targetObj);
+	  
     //Move vesicle towards Wall
     this.mesh.translateZ(this.speed);
   };
