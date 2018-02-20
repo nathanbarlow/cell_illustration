@@ -255,9 +255,9 @@ function render() {
   scene.frameCount += 1;
 
   //Update Vesicles and Organelles
-  for (i = 0; i < vesicles.length; i++){
-    vesicles[i].update();
-    // console.log(vesicles[i].mesh.position);
+  for (k = 0; k < vesicles.length; k++){
+    vesicles[k].update();
+    // console.log(vesicles[k].mesh.position);
   }
 
   for (j = 0; j < organelles.length; j++){
