@@ -258,14 +258,14 @@ var relationships = new Relationships(
   [
     //Vesicles coming from org1
     {releaseObj: org1, targetObj: cellWall, frequency: 100, speed: 4, color: 0x0000ff, radius: 30, arc: 250},
-    {releaseObj: org1, targetObj: org2, frequency: 230, speed: 6, color: 0x0000ff, radius: 10},
+    {releaseObj: org1, targetObj: org2, frequency: 230, speed: 6, color: 0x0000ff, radius: 10, arc: 250},
 
     //Vesicles coming from org2
     {releaseObj: org2, targetObj: org1, frequency: 100, speed: 4, color: 0x00ff00, radius: 25},
     {releaseObj: org2, targetObj: cellWall, frequency: 230, speed: 6, color: 0x00ff00, radius: 25},
 
     //Vesicles coming from org3
-    {releaseObj: org3, targetObj: cellWall, frequency: 50, speed: 7, color: 0xff0000, radius: 10},
+    {releaseObj: org3, targetObj: cellWall, frequency: 50, speed: 7, color: 0xff0000, radius: 10, arc: 500},
   ]
 );
 
