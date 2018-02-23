@@ -37,7 +37,7 @@ function CellWall() {
   this.mesh = new THREE.Mesh(wallGeometry, wallMaterial);
 
   this.init = function() {
-    this.mesh.position.set(200, 200, 0);
+    this.mesh.position.set(200, 0, 0);
 
     scene.add( this.mesh );
   };
@@ -76,7 +76,7 @@ function Organelle(startPosition = {x:0, y:0, z:0}, radius = 150, color = 0x35fa
   this.update = function() {
     // this.mesh.position.x += 2;
   };
-
+  
   this.init = function() {
     this.mesh.position.set(
       this.startPosition.x,
@@ -112,7 +112,8 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25,
   this.mesh = new THREE.Mesh(vesicleGeometry, vesicleMaterial);
   this.parent = parentObj;
   this.speed = speed;
-  this.target = targetObj;
+  this.targetObj = targetObj;
+  this.target = null;
   this.trajectoryMesh = new THREE.Line();
   this.trajectory = new THREE.QuadraticBezierCurve3();
   this.trajectoryPosition = 0;
@@ -122,16 +123,26 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25,
 
   //METHODS
   this.setTarget = function( newTarget ) {
-    //Takes a newTarget as new THREE.Vector3(0,10,20) or typed {x: 0, y: 10, z, 20}
-    this.target = newTarget;
-    this.mesh.lookAt(this.target.mesh.position);
+    this.targetObj = newTarget;
+
+    //Special target if cellWall is the targetObj
+    if (this.targetObj == cellWall){
+      this.target = new THREE.Vector3(
+                this.targetObj.mesh.position.x,
+                this.parent.mesh.position.y,
+                this.parent.mesh.position.z );
+    } else {
+      this.target = this.targetObj.mesh.position;
+    }
+
+    this.mesh.lookAt(this.target);
   };
 
   this.updateTrajectory = function() {
     // scene.remove(this.trajectoryMesh);
 
     //set control Point right between parent and target positions
-    this.controlPoint.lerpVectors ( this.parent.mesh.position, this.target.mesh.position, .5 );
+    this.controlPoint.lerpVectors ( this.parent.mesh.position, this.target, .5 );
 
     //ser controlObject to controlPoint position
     this.controlObject.position.x = this.controlPoint.x;
@@ -150,7 +161,7 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25,
     //Create line along trajectory
     this.trajectory.v0 = this.parent.mesh.position;          //start point
     this.trajectory.v1 = this.controlPoint;                  //control point
-    this.trajectory.v2 = this.target.mesh.position;          //end point
+    this.trajectory.v2 = this.target;                        //end point
 
 
     // let points = this.trajectory.getPoints( 20 );
@@ -165,7 +176,7 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25,
 
   this.update = function(){
     //Delete vesicle once distance to target is less than 5 units
-    if (this.mesh.position.distanceTo(this.target.mesh.position) < 5) {
+    if (this.mesh.position.distanceTo(this.target) < 5) {
       this.delete();
     }
 
@@ -199,6 +210,8 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25,
       this.parent.mesh.position.y,
       this.parent.mesh.position.z
     );
+
+    //if targetObj is cellWall only use objects x position
 
     //Set vesicle to point towards target
     this.setTarget(targetObj);
@@ -250,22 +263,22 @@ function Relationships(sendList){
 
 //ADD Organelle (position, radius, color, transparency)
 var org1 = new Organelle(new THREE.Vector3(-1000, 0, 200), 200, 0x35faa, false );
-var org2 = new Organelle(new THREE.Vector3(-500, 0, -600));
-var org3 = new Organelle(new THREE.Vector3(-500, 0, 600), 300);
+var org2 = new Organelle(new THREE.Vector3(-500, 0, -600), 250, 0xffff00);
+var org3 = new Organelle(new THREE.Vector3(-500, 0, 600), 300, 0x00ffff);
 
 //DEFINE VESICLES GOING BETWEEN
 var relationships = new Relationships(
   [
     //Vesicles coming from org1
-    {releaseObj: org1, targetObj: cellWall, frequency: 100, speed: 4, color: 0x0000ff, radius: 30, arc: 250},
-    {releaseObj: org1, targetObj: org2, frequency: 230, speed: 6, color: 0x0000ff, radius: 10, arc: 250},
+    {releaseObj: org1, targetObj: cellWall, frequency: 100, speed: 4, color: 0x0000ff, radius: 30, arc: 0},
+    {releaseObj: org1, targetObj: org2, frequency: 100, speed: 6, color: 0x0000ff, radius: 10, arc: 150},
 
     //Vesicles coming from org2
     {releaseObj: org2, targetObj: org1, frequency: 100, speed: 4, color: 0x00ff00, radius: 25},
-    {releaseObj: org2, targetObj: cellWall, frequency: 230, speed: 6, color: 0x00ff00, radius: 25},
+    {releaseObj: org2, targetObj: cellWall, frequency: 230, speed: 6, color: 0x00ff00, radius: 15, arc:0},
 
     //Vesicles coming from org3
-    {releaseObj: org3, targetObj: cellWall, frequency: 50, speed: 7, color: 0xff0000, radius: 10, arc: 500},
+    {releaseObj: org3, targetObj: cellWall, frequency: 50, speed: 7, color: 0xff0000, radius: 15, arc: 0},
   ]
 );
 
