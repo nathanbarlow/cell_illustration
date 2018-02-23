@@ -74,7 +74,7 @@ function Organelle(startPosition = {x:0, y:0, z:0}, radius = 150, color = 0x35fa
 
   //METHODS
   this.update = function() {
-	this.mesh.position.x += 1;
+    // this.mesh.position.x += 2;
   };
 
   this.init = function() {
@@ -95,24 +95,30 @@ function Organelle(startPosition = {x:0, y:0, z:0}, radius = 150, color = 0x35fa
 
 
 //-------- VESICLE TEMPLATE ------------
-function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25) {
+function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25, arc = 75) {
   //Input a parent object which will give the vesicle a start location,
   //a target object which the vesicle moves towards, optionally set the
   //speed, color and radius to something different.
 
   //VARIABLES
-  var vesicleGeometry = new THREE.SphereGeometry(radius, 16, 16);
-  //var vesicleGeometry = new THREE.BoxGeometry(50, 50, 50);
+  var vesicleGeometry = new THREE.SphereGeometry(radius, 12, 12);
   var vesicleMaterial = new THREE.MeshLambertMaterial({
     color: color,
     // clippingPlanes: [ plane ],
   });
+  var lineMaterial = new THREE.LineBasicMaterial( { color : 0xff0000 } );
 
   //PROPERTIES
   this.mesh = new THREE.Mesh(vesicleGeometry, vesicleMaterial);
   this.parent = parentObj;
   this.speed = speed;
   this.target = targetObj;
+  this.trajectoryMesh = new THREE.Line();
+  this.trajectory = new THREE.QuadraticBezierCurve3();
+  this.trajectoryPosition = 0;
+  this.controlObject = new THREE.Object3D();
+  this.controlPoint = new THREE.Vector3(0,0,0);
+  this.arc = arc;
 
   //METHODS
   this.setTarget = function( newTarget ) {
@@ -121,21 +127,69 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25)
     this.mesh.lookAt(this.target.mesh.position);
   };
 
+  this.updateTrajectory = function() {
+    // scene.remove(this.trajectoryMesh);
+
+    //set control Point right between parent and target positions
+    this.controlPoint.lerpVectors ( this.parent.mesh.position, this.target.mesh.position, .5 );
+
+    //ser controlObject to controlPoint position
+    this.controlObject.position.x = this.controlPoint.x;
+    this.controlObject.position.y = this.controlPoint.y;
+    this.controlObject.position.z = this.controlPoint.z;
+
+    //Transfrom controlObject to
+    this.controlObject.lookAt(this.parent.mesh.position);
+    this.controlObject.translateX(this.arc);
+
+    //set controlPoint to new controlObject position
+    this.controlPoint.x = this.controlObject.position.x ;
+    this.controlPoint.y = this.controlObject.position.y ;
+    this.controlPoint.z = this.controlObject.position.z ;
+
+    //Create line along trajectory
+    this.trajectory.v0 = this.parent.mesh.position;          //start point
+    this.trajectory.v1 = this.controlPoint;                  //control point
+    this.trajectory.v2 = this.target.mesh.position;          //end point
+
+
+    // let points = this.trajectory.getPoints( 20 );
+    // let lineGeometry = new THREE.BufferGeometry().setFromPoints( points );
+    //
+    // //Create the final object to add to the scene
+    // this.trajectoryMesh.geometry = lineGeometry;
+    // this.trajectoryMesh.material = lineMaterial;
+    //
+    // scene.add(this.trajectoryMesh);
+  };
+
   this.update = function(){
     //Delete vesicle once distance to target is less than 5 units
     if (this.mesh.position.distanceTo(this.target.mesh.position) < 5) {
       this.delete();
     }
-    //Set vesicle to point towards target
-    this.setTarget(targetObj);
-	  
-    //Move vesicle towards Wall
-    this.mesh.translateZ(this.speed);
+
+    //Update trajectory
+    this.updateTrajectory();
+
+    //calculate position adjustment to make based on this.speed
+    let adjustment = this.speed/this.trajectory.getLength();
+    this.trajectoryPosition += adjustment;
+
+    //find the vector3 position along the curve trajectory
+    let newPosition = this.trajectory.getPoint(this.trajectoryPosition);
+
+    //set vesicle position to this newPosition
+    this.mesh.position.x = newPosition.x;
+    this.mesh.position.y = newPosition.y;
+    this.mesh.position.z = newPosition.z;
+
   };
 
   this.delete = function() {
     scene.remove( this.mesh );
-    // delete this;
+    scene.remove( this.trajectoryMesh );
+    delete this;
   };
 
   this.init = function() {
@@ -154,6 +208,9 @@ function Vesicle(parentObj, targetObj, speed = 4, color = 0xff0000, radius = 25)
 
     //Add the vesicle's mesh to the scene
     scene.add( this.mesh );
+
+    //ADD trajectory
+    this.updateTrajectory();
   };
 
   //INITIALIZE Vesicle
@@ -178,7 +235,8 @@ function Relationships(sendList){
           sendList[i].targetObj,
           sendList[i].speed,
           sendList[i].color,
-          sendList[i].radius
+          sendList[i].radius,
+          sendList[i].arc
         );
       }
     }
@@ -199,8 +257,8 @@ var org3 = new Organelle(new THREE.Vector3(-500, 0, 600), 300);
 var relationships = new Relationships(
   [
     //Vesicles coming from org1
-    {releaseObj: org1, targetObj: cellWall, frequency: 100, speed: 4, color: 0x0000ff, radius: 25},
-    {releaseObj: org1, targetObj: org2, frequency: 230, speed: 6, color: 0x0000ff, radius: 50},
+    {releaseObj: org1, targetObj: cellWall, frequency: 100, speed: 4, color: 0x0000ff, radius: 30, arc: 250},
+    {releaseObj: org1, targetObj: org2, frequency: 230, speed: 6, color: 0x0000ff, radius: 10},
 
     //Vesicles coming from org2
     {releaseObj: org2, targetObj: org1, frequency: 100, speed: 4, color: 0x00ff00, radius: 25},
@@ -260,7 +318,7 @@ function render() {
   //Update Vesicles and Organelles
   for (k = 0; k < vesicles.length; k++){
     vesicles[k].update();
-    // console.log(vesicles[k].mesh.position);
+    // console.log(vesicles[i].mesh.position);
   }
 
   for (j = 0; j < organelles.length; j++){
@@ -274,6 +332,7 @@ function render() {
 
 	//Run Render
   requestAnimationFrame(render);
+
 
 }
 
