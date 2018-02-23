@@ -74,9 +74,13 @@ function Organelle(startPosition = {x:0, y:0, z:0}, radius = 150, color = 0x35fa
 
   //METHODS
   this.update = function() {
-    // this.mesh.position.x += 2;
+    this.move();
   };
-  
+
+  this.move = function() {
+      //No movement yet
+  };
+
   this.init = function() {
     this.mesh.position.set(
       this.startPosition.x,
@@ -288,7 +292,7 @@ camera = new THREE.PerspectiveCamera( 45.0, window.innerWidth / window.innerHeig
 var width = 4000;
 var height = 6000;
 // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 50000 );
-camera.position.set( 0, 600, -1000 );
+camera.position.set( 0, 3000, 0 );
 
 //Extnending Camera Object Properties and Methods
 camera.followObj = cellWall.mesh;
